@@ -30,6 +30,7 @@ doStuff(buffer);
 Well it will blow out the stack if called recursively. Or even if called once for example
 if you use a 4096 buffer that will blow out the stack on DOS or embedded systems sometimes.
 But even 4096 is small for a string if it holds paragraphs of text.
+#### Not to mention what will happen if you need to write more than 99 characters or 100 bytes of data
 
 ### try this
 ~~~{.c}
