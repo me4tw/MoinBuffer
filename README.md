@@ -3,7 +3,7 @@ Malloc Only If Needed Buffers
 
 These can be expanded even further, such as circular buffer capability perhaps.
 
-But they are super-memory effecient for character-by-character access (getc/putc)
+But they are super-memory efficient for character-by-character access (getc/putc)
 
 And they still save you typing and runtime performance for user-input / dynamic-sized data so long
 as your static buffer size is big enough to cover the common case.
