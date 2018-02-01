@@ -8,6 +8,9 @@ But they are super-memory effecient for character-by-character access (getc/putc
 And they still save you typing and runtime performance for user-input / dynamic-sized data so long
 as your static buffer size is big enough to cover the common case.
 
+Another idea would be using a garbage collector for the heap buffer so that the free function never
+needs to be called, that would be even better.
+
 [![HitCount](http://hits.dwyl.io/me4tw/MoinBuffer.svg)](http://hits.dwyl.io/me4tw/MoinBuffer)
 
 
