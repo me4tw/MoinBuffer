@@ -49,6 +49,6 @@ doStuff(MoinBuffer_Expose(MyBuf));
 MoinBuffer_Free(MyBuf);
 ~~~
 
-###note
+### note
 This macro (MOINBUFFER()) should work not only for C++/C99 variable-defined-anywhere
     capability but also in strict (pedantic mode) C89.
