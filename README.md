@@ -14,6 +14,12 @@ needs to be called, that would be even better.
 [![HitCount](http://hits.dwyl.io/me4tw/MoinBuffer.svg)](http://hits.dwyl.io/me4tw/MoinBuffer)
 
 
+## Use them as circular buffers
+These are great, you can use them as a circular buffer that grants you access to the entire range of data. And it can all
+be done without malloc so long as you never push too much on at once. Just remember that to use them as a circular buffer, every time you append a character, you must test if the length is >= your "circular" size and if so then consume a character first. That way it will never call malloc() even if you push gigabytes through the circular buffer, and you can at any point get access to a contigous array of the contents, and it is optimised in that it does not memcpy() at every allocation only when needed.
+
+So if you have a static backing buffer of 1024 and your cicular size is 640kb then you will only have memcpy() called every so often, and never a malloc().
+
 ### Have code like:
 ~~~{.c}
 char *buffer = malloc(size_needed);
