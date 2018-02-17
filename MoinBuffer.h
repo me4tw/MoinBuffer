@@ -1,3 +1,5 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 /**@file
 @brief Malloc Only If Needed Buffers
 
@@ -28,6 +30,8 @@ doStuff(buffer);
 Well it will blow out the stack if called recursively. Or even if called once for example
 if you use a 4096 buffer that will blow out the stack on DOS or embedded systems sometimes.
 But even 4096 is small for a string if it holds paragraphs of text.
+
+Not to mention what will happen if you need to write more than 99 characters or 100 bytes of data
 
 @code
 char backingstorage_for_buffer[100];
@@ -64,7 +68,7 @@ MoinBuffer_Free(MyBuf);
 #define DS_MoinBuf_h
 
 #include "StdInt.h"//for size_t
-
+#include <string.h>//for strlen() in the macro
 
 /**
 change this to 0 for your project, I leave it as 1 because I don't want to set project defines
@@ -206,11 +210,17 @@ if this is set then CuTest.h will be included and unit tests functions will be t
 CuSuite* tMoinBuffer_Eof_GetSuite(void);
 CuSuite* tMoinBuffer_Write_GetSuite(void);
 CuSuite* tMoinBuffer_BytesLeft_GetSuite(void);
+CuSuite* tMoinBuffer_Expose_GetSuite(void);
+CuSuite* tMoinBuffer_PutC_GetSuite(void);
+CuSuite* tMoinBuffer_WroteUpTo_GetSuite(void);
 /**A convenience macro for the RunAllTests() function*/
 #define ADD_MOINBUFFER_TESTS(SUITE) \
- CuSuiteAddSuite(SUITE, tMoinBuffer_Eof_GetSuite()); \
-CuSuiteAddSuite(SUITE, tMoinBuffer_Write_GetSuite());\
-CuSuiteAddSuite(SUITE, tMoinBuffer_BytesLeft_GetSuite());
+CuSuiteAddSuite(SUITE, tMoinBuffer_PutC_GetSuite()); \
+CuSuiteAddSuite(SUITE, tMoinBuffer_Expose_GetSuite()); \
+CuSuiteAddSuite(SUITE, tMoinBuffer_Eof_GetSuite()); \
+CuSuiteAddSuite(SUITE, tMoinBuffer_Write_GetSuite()); \
+CuSuiteAddSuite(SUITE, tMoinBuffer_BytesLeft_GetSuite()); \
+CuSuiteAddSuite(SUITE, tMoinBuffer_WroteUpTo_GetSuite());
 #endif
 
 #endif

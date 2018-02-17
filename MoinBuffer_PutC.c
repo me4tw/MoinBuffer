@@ -1,3 +1,5 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "MoinBuffer.h"
 
 
@@ -39,3 +41,31 @@ static void mbRamPutC(struct MoinBuffer *m, char c)
 		m->staticStorage[m->writePos++] = c;
 	}
 }
+
+
+#if MOINBUFFER_TESTS == 1
+void tMoinBuffer_PutC_test1(CuTest *tc)
+{
+	MOINBUFFER(test,2);
+	MoinBuffer_PutC(test,'a');
+	MoinBuffer_PutC(test,'b');
+	MoinBuffer_PutC(test,'c');
+	CuAssertIntEquals(tc,'a',MoinBuffer_GetC(test));
+	CuAssertIntEquals(tc,'b',MoinBuffer_GetC(test));
+	CuAssertIntEquals(tc,'c',MoinBuffer_GetC(test));
+
+	CuAssertIntEquals(tc,'\0',MoinBuffer_GetC(test));
+	CuAssertIntEquals(tc,'\0',MoinBuffer_GetC(test));
+
+	MoinBuffer_PutC(test,'x');
+	CuAssertIntEquals(tc,'x',MoinBuffer_GetC(test));
+	MoinBuffer_Free(test);
+}
+CuSuite* tMoinBuffer_PutC_GetSuite(void)
+{
+	CuSuite* suite = CuSuiteNew();
+	SUITE_ADD_TEST(suite, tMoinBuffer_PutC_test1);
+	return suite;
+}
+#endif
+

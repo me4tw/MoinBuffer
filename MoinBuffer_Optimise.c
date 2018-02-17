@@ -1,3 +1,5 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "MoinBuffer.h"
 #include <stdlib.h>
 static void mbStreamShiftDown(struct MoinBuffer *m, size_t minFree);
@@ -11,6 +13,8 @@ void MoinBuffer_Optimise(struct MoinBuffer *m, size_t minFree)
 		if (m->heapStorage && m->staticStorageSize >= minFree)
 		{
 			free(m->heapStorage);
+			m->heapStorage = NULL;
+			m->heapAllocationSize = 0;
 		}
 	}
 
@@ -82,6 +86,7 @@ static void mbRamShiftDown(struct MoinBuffer *m, size_t minFree)
 			//to:   [xxxxxrrr ]---------------------
 			memcpy(m->staticStorage, m->heapStorage + m->readPos, m->writePos - m->readPos);
 			free(m->heapStorage);
+			m->heapStorage = NULL;
 			m->heapAllocationSize = 0;
 		}
 		else
