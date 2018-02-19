@@ -1,7 +1,6 @@
 // This is an independent project of an individual developer. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "MoinBuffer.h"
-#include "MoinBuffer.h"
 #include <stdlib.h>//malloc
 #include <string.h>//memcpy
 
@@ -9,25 +8,72 @@ char *MoinBuffer_Expose(struct MoinBuffer *m)
 {
 	if(m->mode == MoinStream)
 	{
-		//convert to random access
-		char *newmem = malloc(m->heapAllocationSize + m->staticStorageSize + 1);
-		memcpy(newmem,m->staticStorage,m->staticStorageSize);
-		if(m->heapAllocationSize)
-			memcpy(newmem+m->staticStorageSize,m->heapStorage,m->heapAllocationSize);
-		newmem[m->heapAllocationSize + m->staticStorageSize]='\0';
-		if(m->heapStorage)
+		size_t bytesleftfree = MoinBuffer_BytesLeftFree(m);
+		size_t bytesofdata = MoinBuffer_BytesLeft(m);
+		MoinBuffer_Optimise(m, bytesleftfree);
+		if (bytesofdata + bytesleftfree <= m->staticStorageSize)
 		{
-			free(m->heapStorage);
+			if (m->heapStorage)
+				free(m->heapStorage);
 			m->heapStorage = NULL;
 			m->heapAllocationSize = 0;
+			m->mode = MoinRandomAccess;
+			//return &m->staticStorage[0];
 		}
-		m->staticStorage[0]='\0';
-		m->heapStorage = newmem;
-		m->mode = MoinRandomAccess;
-		MoinBuffer_Optimise(m,m->heapAllocationSize + m->staticStorageSize);
+		else if(bytesleftfree + bytesofdata <= m->heapAllocationSize)
+		{
+			// we got [xxxxxxxxxx][xxx----------------]
+			// we need[xxxxxxxxxx][----------xxx------]
+			// then   [----------][xxxxxxxxxxxxx------]
+			size_t amountInStatic = bytesofdata <= m->staticStorageSize ? bytesofdata : m->staticStorageSize;
+			size_t amountInHeap = bytesofdata > m->staticStorageSize ? bytesofdata - m->staticStorageSize : 0;
+			memmove(m->heapStorage + amountInStatic, m->heapStorage, amountInHeap);
+			memcpy(m->heapStorage, m->staticStorage, amountInStatic);
+			m->mode = MoinRandomAccess;
+			//return &m->heapStorage[0];
+		}
+		else
+		{
+			size_t newmemsz = bytesofdata + bytesleftfree;
+			char *newmem = malloc(newmemsz + 1);
+			if (!newmem)
+			{
+				if (m->heapStorage)
+				{
+					free(m->heapStorage);
+					m->heapStorage = NULL;
+					m->staticStorageSize = 0;
+				}
+				return NULL;
+			}
+			memcpy(newmem, m->staticStorage, m->staticStorageSize);
+			if (m->heapStorage && bytesofdata > m->staticStorageSize)
+			{
+				memcpy(newmem + m->staticStorageSize, m->heapStorage, bytesofdata - m->staticStorageSize);
+				free(m->heapStorage);
+				m->heapStorage = NULL;
+				m->heapAllocationSize = 0;
+			}
+			m->heapStorage = newmem;
+			m->heapAllocationSize = newmemsz;
+			m->mode = MoinRandomAccess;
+			//return &m->heapStorage[0];
+		}
 	}
-	m->heapStorage[m->writePos]='\0';
-	return m->heapStorage + m->readPos;
+	//this may change it from heap storage to static storage
+	if (m->readPos > 4096)
+		MoinBuffer_Optimise(m, MoinBuffer_BytesLeftFree(m));
+	//now we can test that status to get the final location of the data
+	if (m->heapStorage)
+	{
+		m->heapStorage[m->writePos] = '\0';
+		return m->heapStorage + m->readPos;
+	}
+	else
+	{
+		m->staticStorage[m->writePos] = '\0';
+		return m->staticStorage + m->readPos;
+	}
 }
 
 

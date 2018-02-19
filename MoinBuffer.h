@@ -127,9 +127,16 @@ not inside a struct, because it calls a function.
 char MoinBuffer_GetC(struct MoinBuffer *m);
 int MoinBuffer_Eof(const struct MoinBuffer *m);
 void MoinBuffer_PutC(struct MoinBuffer *m, char c);
+/**@return how many bytes are left to still be read*/
 size_t MoinBuffer_BytesLeft(const struct MoinBuffer *m);
+#define MoinBuffer_Length MoinBuffer_BytesLeft
+/**@return how many bytes can be written without an alloc or optimise*/
+size_t MoinBuffer_BytesLeftFree(const struct MoinBuffer *m);
 
-/**Called by other functions at certain times*/
+/**
+Called by other functions at certain times.
+Will shift data down to the start of the memory area as appropriate.
+*/
 void MoinBuffer_Optimise(struct MoinBuffer *m, size_t minFree);
 
 /**
@@ -147,12 +154,21 @@ void MoinBuffer_EnsureFree(struct MoinBuffer *m, size_t n);
 
 /**
 Will convert the MoinBuffer to MoinRandomAccess mode if need be.
+@warning This will shift the data around. If you call MoinBuffer_EnsureFree()
+and then MoinBuffer_WroteUpTo() and then MoinBuffer_Consume()
+then this MoinBuffer_Expose(), what can happen is that the data may be shifted
+down and the amount that is still free will be retained but excess free beyond
+that may be reallocated away which you might not expect (so the full amount
+originally free before the wrote up to will no longer be guaranteed to be available).
+In this case if you care about this you should call MoinBuffer_EnsureFree() again
+before MoinBuffer_Expose()
 @return a pointer to internal memory
 */
 char * MoinBuffer_Expose(struct MoinBuffer *m);
 /**
 Advances the read pointer by this much.
-@warning If you call this before calling MoinBuffer_WroteUpTo() you will get errors. Call MoinBuffer_WroteUpTo() first in that case.
+@warning If you call this before calling MoinBuffer_WroteUpTo() you will get errors.
+Call MoinBuffer_WroteUpTo() first in that case.
 */
 void MoinBuffer_Consume(struct MoinBuffer *m, size_t n);
 /**
@@ -178,6 +194,11 @@ Notify the system that you wrote up to the given offset, important or else optim
 void MoinBuffer_WroteUpTo(struct MoinBuffer *m, size_t endPoint);
 
 void MoinBuffer_Free(struct MoinBuffer *m);
+
+/**
+@return a number between 0 and 255 if a byte was pushed out, -1 if no byte was pushed out. Useful mainly when nBytes = 1
+*/
+int MoinBuffer_CircularAdd(struct MoinBuffer *m, size_t circularSize, const char *src, size_t nBytes);
 
 
 #ifdef ENABLE_TESTS

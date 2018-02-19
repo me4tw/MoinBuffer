@@ -34,7 +34,16 @@ static void mbStreamEnsureFree(struct MoinBuffer *m, size_t n)
 		if(m->heapStorage)
 		{
 			//case: [   xxxxxxxnnnnnn][nnnnnnn]nnnnnn
-			m->heapStorage = (char*)realloc(m->heapStorage, n+1);
+			char *temp = (char*)realloc(m->heapStorage, n + 1);
+			if(temp)
+				m->heapStorage = temp;
+			else
+			{
+				free(m->heapStorage);
+				m->heapStorage = NULL;
+				m->heapAllocationSize = 0;
+			}
+			
 		} else
 		{
 			//case: [    xxxxxxxnnnnnnnn]--------
@@ -48,12 +57,25 @@ static void mbStreamEnsureFree(struct MoinBuffer *m, size_t n)
 			m->heapStorage = (char*)malloc(n+1);
 		else
 		{
+			char *temp;
 			//case: [         ][ xxxnnnnnnnnnn   ]
 			if(m->heapAllocationSize > (n+(m->writePos - m->staticStorageSize)))
 				return;
 			//case : [        ][   xxxnnnnn]nnnnnnn
-			m->heapStorage = (char*)realloc(m->heapStorage, m->heapAllocationSize + n + 1);
-			m->heapAllocationSize += n;
+			temp = (char*)realloc(m->heapStorage, m->heapAllocationSize + n + 1);
+			if (temp)
+			{
+				m->heapStorage = temp;
+				m->heapAllocationSize += n;
+			}
+			else
+			{
+				free(m->heapStorage);
+				m->heapStorage = NULL;
+				m->heapAllocationSize = 0;
+			}
+
+			
 		}
 	}
 }
@@ -61,6 +83,7 @@ static void mbRamEnsureFree(struct MoinBuffer *m, size_t n)
 {
 	if(m->heapStorage)
 	{
+		char *temp;
 		//case [       ][              xxxxxnnnnnnn]
 		if(m->readPos > n)
 		{
@@ -73,7 +96,15 @@ static void mbRamEnsureFree(struct MoinBuffer *m, size_t n)
 		if(m->heapAllocationSize > m->writePos + n)
 			return;
 		//case: [        ][        xxxxxxxnnnnnnnn]nnnn
-		m->heapStorage = (char*)realloc(m->heapStorage,m->writePos+n+1);
+		temp = (char*)realloc(m->heapStorage,m->writePos+n+1);
+		if (temp)
+			m->heapStorage = temp;
+		else
+		{
+			free(m->heapStorage);
+			m->heapStorage = NULL;
+			m->heapAllocationSize = 0;
+		}
 	} else
 	{
 		//case: [    xxxxxnnnnn ]--------
@@ -81,8 +112,11 @@ static void mbRamEnsureFree(struct MoinBuffer *m, size_t n)
 			return;
 		//case: [   xxxxnnnnnn]nnnnnn-------
 		m->heapStorage = (char*)malloc(n + 1 + m->writePos - m->readPos);
-		memcpy(m->heapStorage, m->staticStorage + m->readPos, m->writePos - m->readPos);
-		m->heapAllocationSize = n + 1 + m->writePos - m->readPos;
+		if (m->heapStorage)
+		{
+			memcpy(m->heapStorage, m->staticStorage + m->readPos, m->writePos - m->readPos);
+			m->heapAllocationSize = n + 1 + m->writePos - m->readPos;
+		}
 		m->writePos -= m->readPos;
 		m->readPos = 0;
 	}

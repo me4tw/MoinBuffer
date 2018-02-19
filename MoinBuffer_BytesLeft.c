@@ -10,6 +10,10 @@ size_t MoinBuffer_BytesLeft(const struct MoinBuffer *m)
 }
 
 
+size_t MoinBuffer_BytesLeftFree(const struct MoinBuffer *m)
+{
+	return (m->staticStorageSize + m->heapAllocationSize) - m->writePos;
+}
 
 
 #if MOINBUFFER_TESTS == 1
